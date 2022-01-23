@@ -12,15 +12,16 @@ class TaskQueue {
             midTerm,
             longTerm
         };
-        TaskQueue(std::string filename);
+        TaskQueue(std::string filename, int limit);
         int getNumberOfTasks();
-        void printTop5();
+        void printTopX();
         void finishTask(int number);
         void postponeTask(TaskQueue::Prio p, int number);
         void addTask(TaskQueue::Prio p, Task task);
     private:
         std::vector<Task> tasks;
         std::string filename;
+        int limit;
         void deleteTask(int number);
         void insertTask(TaskQueue::Prio p, Task task);
         void persistTasks();

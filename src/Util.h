@@ -8,4 +8,5 @@ namespace Util {
         void println(std::string str);
         int now();
         int calcDays(int date);
+        std::string numericString(int limit);
 };

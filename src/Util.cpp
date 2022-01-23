@@ -26,3 +26,11 @@ int Util::now() {
 int Util::calcDays(int date) {
     return (Util::now()-date) / dayInSecs;
 }
+
+std::string Util::numericString(int limit) {
+    std::string result = "";
+    for (int i=1; i<=limit; i++) {
+        result += std::to_string(i);
+    }
+    return result;
+}

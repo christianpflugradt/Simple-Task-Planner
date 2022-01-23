@@ -5,16 +5,25 @@
 
 #include "TaskQueue.h"
 #include "Util.h"
+#include "StpTexts.h"
 
 class SimpleTaskPlanner {
 
+    private:
+
+        enum Mode {
+            focus,
+            normal,
+            strategy
+        };
+
     public:
 
-        void run(std::string filename) {
-            printBanner();
-            Util::println("    using file '" + filename + "' for task list");
-            Util::println("    (just hit enter to display usage info)");
-            taskQueue = new TaskQueue(filename);
+        void run(std::string filename, std::string mode) {
+            this->initMode(mode);
+            this->taskQueue = new TaskQueue(filename, getLimit());
+            StpTexts::printBanner();
+            printRunInfo(filename);
             for(;;) {
                 Util::print("your input: ");
                 const std::string command = Util::getInput();
@@ -28,10 +37,11 @@ class SimpleTaskPlanner {
                     } else {
                         taskQueue->addTask(inputToPrio(command), Task(task));
                     }
-                } else if (isTop5(command)) {
-                    modifyTop5(command);
+                } else if (isTopX(command)) {
+                    modifyTopX(command);
                 } else {
-                    printUsage();
+                    StpTexts::printUsage();
+                    taskQueue->printTopX();
                 }
             }
             Util::println("Bye!");
@@ -40,6 +50,7 @@ class SimpleTaskPlanner {
     private:
 
         TaskQueue *taskQueue;
+        Mode mode;
 
         const std::string QUIT = "Q";
         const std::string DONE = "D";
@@ -48,8 +59,18 @@ class SimpleTaskPlanner {
         const std::string MEDIUM = "M";
         const std::string LONG = "L";
 
-        bool isTop5(std::string input) {
-            return std::regex_match(input, std::regex("([12345][DSML])"));
+        int getLimit() {
+            if (mode == Mode::focus) {
+                return 3;
+            } else if (mode == Mode::strategy) {
+                return 9;
+            } else {
+                return 5;
+            }
+        }
+
+        bool isTopX(std::string input) {
+            return std::regex_match(input, std::regex("([" + Util::numericString(getLimit()) + "][DSML])"));
         }
 
         TaskQueue::Prio inputToPrio(std::string input) {
@@ -66,7 +87,7 @@ class SimpleTaskPlanner {
             }
         }
 
-        void modifyTop5(std::string input) {
+        void modifyTopX(std::string input) {
             int pos = std::atoi(input.substr(0,1).c_str()) - 1;
             if (taskQueue->getNumberOfTasks() <= pos) {
                 Util::println("Task does not exist - aborted.");
@@ -80,67 +101,31 @@ class SimpleTaskPlanner {
             }
         }
 
-        void printBanner() {
-            Util::print(R"(
-      _  _  _  _         _  _  _  _  _         _  _  _  _
-    _(_)(_)(_)(_)_      (_)(_)(_)(_)(_)       (_)(_)(_)(_)_
-   (_)          (_)           (_)             (_)        (_)
-   (_)_  _  _  _              (_)             (_) _  _  _(_)
-     (_)(_)(_)(_)_            (_)             (_)(_)(_)(_)
-    _           (_)           (_)             (_)
-   (_)_  _  _  _(_)           (_)             (_)
-     (_)(_)(_)(_)             (_)             (_)
-
-     SIMPLE                   TASK            PLANNER     v0.1.0
-
-
-)");
+        void initMode(std::string input) {
+            if (input == "focus") {
+                this->mode = Mode::focus;
+            } else if (input == "strategy") {
+                this->mode = Mode::strategy;
+            } else {
+                this->mode = Mode::normal;
+            }
         }
 
-        void printUsage() {
-            Util::print(R"(
-    usage:
-
-    - input Q (capital letter) to exit this program
-    - input one of the following capital letters to create a new task:
-        - N => creates a task to be done now (at position 1 in the list)
-        - S => creates a task to be done short term (at position 11 or last in the list)
-        - M => creates a task to be done mid term (right in the middle of the list
-               but at least at position 21 or last in the list if it has less than 42 entries)
-        - L => creates a task to be done long term (at last position in the list)
-        - leave the task name empty to abort
-    - input a command to update one of the top 5 in the list
-        - 1D will set the 1st task to done (remove it from the list)
-        - 2S will move the 2nd task to short term (same ruleset as for new tasks applies)
-        - 3M will move the 3rd task to mid term (same ruleset as for new tasks applies)
-        - 4L will move the 4th task to long term (same ruleset as for new tasks applies)
-        - any of the positions 1, 2, 3, 4 and 5 can be combined with any of the letters D, S, M and L
-    - top 5
-        - after every action the top 5 will be displayed
-            - it is not possible to view any other tasks, you always have to deal with your top 5
-            - each task is suffixed with something like '3d 1x'
-                - d and x are always fix but the numbers vary
-                - 3d indicates the task exist since 3 days
-                - 1x indicates the task has been postponed once (using a command such as 2S)
-                - more examples:
-                    - '0d 0x' means the task is less than a day old and hasn't been postponed
-                    - '365d 8x' means the task is a year old and has been postponed 8 times
-    - the task list is synchronized to a csv file
-        - the physical file is updated immediately after every action
-        - the default file name is 'stp.csv'
-        - you may pass another file name as program argument to use it instead,
-          if the file doesn't exist it will be created upon program start
-        - example program call for a custom file '/tmp/mytasks.csv' => './runSimpleTaskPlanner.sh /tmp/mytasks.csv'
-    - think before you act: any actions performed cannot be easily undone
-    - enter anything else to display this usage info
-
-)");
+        void printRunInfo(std::string filename) {
+            Util::println("    using file '" + filename + "' for task list");
+            if (mode == Mode::focus) {
+                Util::println("    active mode: focus");
+            } else if (mode == Mode::strategy) {
+                Util::println("    active mode: strategy");
+            }
+            Util::println("    (just hit enter to display usage info)");
         }
 
 };
 
 int main(int argc, char *argv[]) {
     const std::string filename = argc > 1 ? std::string(argv[1]) : "stp.csv";
+    const std::string mode = argc > 2 ? std::string(argv[2]) : "";
     SimpleTaskPlanner simpleTaskPlanner;
-    simpleTaskPlanner.run(filename);
+    simpleTaskPlanner.run(filename, mode);
 }
