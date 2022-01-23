@@ -5,8 +5,9 @@
 #include "TaskQueue.h"
 #include "Util.h"
 
-TaskQueue::TaskQueue(std::string filename) {
+TaskQueue::TaskQueue(std::string filename, int limit) {
     this->filename = filename;
+    this->limit = limit;
     loadTasks();
 }
 
@@ -16,26 +17,25 @@ void TaskQueue::loadTasks() {
     std::string line;
     while(std::getline(file, line)) {
         int start = 0;
-        auto end = line.find("\t");
+        int end = line.find("\t");
         int date = std::atoi(line.substr(start, end - start).c_str());
         start = end + 1;
         end = line.find("\t");
         int postponements = std::atoi(line.substr(start, end - start).c_str());
-        start = end + 1;
+        start = end + 3;
         std::string title = line.substr(start);
         this->tasks.insert(this->tasks.end(), Task(date, postponements, title));
     }
-    printTop5();
+    printTopX();
 }
 
 int TaskQueue::getNumberOfTasks() {
     return this->tasks.size();
 }
 
-void TaskQueue::printTop5() {
-    int limit = std::min(5, getNumberOfTasks());
-    Util::println("\nTop 5 tasks (" + std::to_string(getNumberOfTasks()) + " total)");
-    for (int i=0; i<limit; i++) {
+void TaskQueue::printTopX() {
+    Util::println("\nTop tasks (" + std::to_string(getNumberOfTasks()) + " total)");
+    for (int i=0; i<std::min(limit, getNumberOfTasks()); i++) {
         Util::print(std::to_string(i + 1) + ". " + this->tasks.at(i).to_string() + "\n");
     }
     Util::println("");
@@ -43,7 +43,7 @@ void TaskQueue::printTop5() {
 
 void TaskQueue::finishTask(int number) {
     deleteTask(number);
-    printTop5();
+    printTopX();
     persistTasks();
 }
 
@@ -53,7 +53,7 @@ void TaskQueue::deleteTask(int number) {
 
 void TaskQueue::addTask(TaskQueue::Prio p, Task task) {
     insertTask(p, task);
-    printTop5();
+    printTopX();
     persistTasks();
 }
 
@@ -79,7 +79,7 @@ void TaskQueue::postponeTask(TaskQueue::Prio p, int number) {
     task.postpone();
     deleteTask(number);
     insertTask(p, task);
-    printTop5();
+    printTopX();
     persistTasks();
 }
 
