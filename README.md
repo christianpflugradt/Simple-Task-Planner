@@ -1,5 +1,13 @@
 # Simple Task Planner
 
+> [!WARNING]
+> **This project is archived.** I no longer use, develop or maintain Simple Task
+> Planner. It was a small tool I wrote for my personal needs in 2022 and used myself
+> for a while, and the remark in the "Development" section that it will likely be
+> improved is outdated. It is not actively tested against current compilers. The code
+> stays available for reference. Use it at your own risk, or fork it if you want to
+> continue it. Please don't confuse it with my active projects.
+
 Simple Task Planner (STP) is a very simple command line based tool to organize tasks.
 
 ## Description
